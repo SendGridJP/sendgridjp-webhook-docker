@@ -23,11 +23,13 @@ RUN echo root:password | chpasswd
 RUN echo 'rootpass ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 RUN echo 'PasswordAuthentication yes' >> /etc/ssh/sshd_config
 RUN sed -e "s/PermitRootLogin without-password/PermitRootLogin yes/g" /etc/ssh/sshd_config > /etc/ssh/sshd_config
+
 #
 # expose ssh port
 #
 EXPOSE 22
 EXPOSE 7076
+EXPOSE 80
 
 #
 # install modules
@@ -56,13 +58,12 @@ RUN apt-get install -y php5 curl libcurl3 php5-curl
 WORKDIR /usr/local/bin
 RUN curl -sS https://getcomposer.org/installer | php
 #
-# Get sample code
+# Get sendgridjp-eventkit
 RUN mkdir /root/php
 WORKDIR /root/php
-RUN git clone https://github.com/sendgridjp/sendgridjp-php-example
-WORKDIR /root/php/sendgridjp-php-example
-RUN /usr/local/bin/composer.phar install
-ADD ./.env /root/php/sendgridjp-php-example/.env
+RUN git clone https://github.com/SendGridJP/sendgridjp-eventkit.git
+WORKDIR /root/php/sendgridjp-eventkit
+#RUN /usr/local/bin/composer.phar install
 
 #
 # for node.js
@@ -75,10 +76,26 @@ WORKDIR /root/nodejs/node-v0.11.13
 RUN ./configure
 RUN make install
 #
-# Get sample code
+# Get sendgrid-parse-demo
 WORKDIR /root/nodejs
 RUN git clone https://github.com/SendGridJP/sendgrid-parse-demo.git
 WORKDIR /root/nodejs/sendgrid-parse-demo
 RUN npm install
 ADD ./.env /root/nodejs/sendgrid-parse-demo/.env
+#
+# Install nginx
+RUN apt-get install -y nginx php5-fpm php5-sqlite sqlite3
 
+#
+# Install Supervisor
+RUN apt-get install -y supervisor
+RUN mkdir -p /var/log/sshd
+RUN mkdir -p /var/log/supervisor
+ADD files/etc/supervisor/conf.d/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+ADD files/etc/nginx/sites-available/default /etc/nginx/sites-available/default
+
+RUN cp -r /root/php/sendgridjp-eventkit/* /usr/share/nginx/html
+RUN mv /usr/share/nginx/html/index.html /usr/share/nginx/html/index.html.org
+RUN chmod 777 /usr/share/nginx/html
+
+CMD ["/usr/bin/supervisord"]
