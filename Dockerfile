@@ -59,11 +59,9 @@ WORKDIR /usr/local/bin
 RUN curl -sS https://getcomposer.org/installer | php
 #
 # Get sendgridjp-eventkit
-RUN mkdir /root/php
-WORKDIR /root/php
-RUN git clone https://github.com/SendGridJP/sendgridjp-eventkit.git
-WORKDIR /root/php/sendgridjp-eventkit
-#RUN /usr/local/bin/composer.phar install
+WORKDIR /usr/share/nginx/html
+RUN wget -O event_kit.zip https://github.com/sendgrid/eventkit/blob/master/quick_installer/event_kit.zip?raw=true
+RUN unzip event_kit.zip
 
 #
 # for node.js
@@ -94,8 +92,6 @@ RUN mkdir -p /var/log/supervisor
 ADD files/etc/supervisor/conf.d/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 ADD files/etc/nginx/sites-available/default /etc/nginx/sites-available/default
 
-RUN cp -r /root/php/sendgridjp-eventkit/* /usr/share/nginx/html
-RUN mv /usr/share/nginx/html/index.html /usr/share/nginx/html/index.html.org
 RUN chmod 777 /usr/share/nginx/html
 
 CMD ["/usr/bin/supervisord"]
